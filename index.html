@@ -283,9 +283,13 @@
                                 class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center justify-center gap-1.5" title="ดึงข้อมูลรายชื่อล่าสุดจาก Google Sheet">
                             <i class="fa-solid fa-arrows-rotate"></i> 🔄 ซิงก์ Google Sheets
                         </button>
+                        <button onclick="openCertBuilderModal()" 
+                                class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center justify-center gap-1.5" title="ออกแบบเกียรติบัตรแบบลากวางอิสระ">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 🎨 สตูดิโอออกแบบเกียรติบัตร
+                        </button>
                         <button onclick="showCertificateModal('all')" 
                                 class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center justify-center gap-1.5" title="ออกเกียรติบัตรสำหรับนักเรียนทุกคน">
-                            <i class="fa-solid fa-award"></i> 📜 พิมพ์เกียรติบัตรทั้งหมด
+                            <i class="fa-solid fa-award"></i> 📜 พิมพ์เกียรติบัตรแม่แบบมาตรฐาน
                         </button>
                         <button onclick="exportToCSV()" 
                                 class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center justify-center gap-1.5">
@@ -497,6 +501,179 @@
                 <button onclick="closePassModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
                     ปิดหน้าต่าง
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Certificate Builder Modal (สตูดิโอออกแบบเกียรติบัตรลากวาง) -->
+    <div id="cert-builder-modal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md z-50 hidden items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-6xl w-full p-4 md:p-6 shadow-2xl relative my-auto max-h-[96vh] flex flex-col no-print">
+            <!-- Modal Header -->
+            <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 mb-4 shrink-0 gap-2">
+                <div class="flex items-center gap-2.5 text-indigo-950 font-black text-base md:text-lg">
+                    <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <h3>สตูดิโอออกแบบและรันเกียรติบัตร (Visual Certificate Builder)</h3>
+                        <p class="text-xs text-slate-400 font-medium">อัปโหลดภาพแบบฟอร์ม ลากวางตำแหน่ง เลือกฟอนต์ และรันเลขเกียรติบัตรเป็นชุด</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="saveCertBuilderTemplate()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> บันทึกแม่แบบ
+                    </button>
+                    <button onclick="generateCustomCertificatesBatch()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-black shadow-md flex items-center gap-1.5 transition-all">
+                        <i class="fa-solid fa-award"></i> 📜 รันเกียรติบัตร & พิมพ์ PDF
+                    </button>
+                    <button onclick="closeCertBuilderModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Builder Studio Grid Body -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-y-auto flex-1 pr-1">
+                <!-- Left Sidebar: Controls & Inspector -->
+                <div class="lg:col-span-4 space-y-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 h-fit">
+                    <!-- 1. Background Image Upload -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-extrabold text-slate-800 flex items-center gap-1">
+                            <i class="fa-solid fa-image text-indigo-600"></i> 1. แบบฟอร์มภาพพื้นหลัง (Template Image)
+                        </label>
+                        <input type="file" id="cert-bg-file-input" accept="image/*" onchange="handleCertBgUpload(event)" class="hidden">
+                        <button onclick="document.getElementById('cert-bg-file-input').click()" 
+                                class="w-full py-2.5 px-3 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 text-xs font-bold flex items-center justify-center gap-2 transition-all">
+                            <i class="fa-solid fa-upload"></i> อัปโหลดรูปเกียรติบัตร (Canva / PNG / JPG)
+                        </button>
+                    </div>
+
+                    <!-- 2. Add Elements -->
+                    <div class="space-y-1.5 pt-2 border-t border-slate-200">
+                        <label class="block text-xs font-extrabold text-slate-800 flex items-center gap-1">
+                            <i class="fa-solid fa-plus-circle text-emerald-600"></i> 2. เพิ่มข้อความลากวาง (Add Elements)
+                        </label>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <button onclick="addCertBuilderElement('name')" class="px-2.5 py-2 rounded-lg bg-white border border-slate-300 hover:border-indigo-500 text-slate-800 text-[11px] font-bold shadow-sm transition-all text-left">
+                                + ชื่อ-นามสกุล
+                            </button>
+                            <button onclick="addCertBuilderElement('certNo')" class="px-2.5 py-2 rounded-lg bg-white border border-slate-300 hover:border-indigo-500 text-slate-800 text-[11px] font-bold shadow-sm transition-all text-left">
+                                + เลขเกียรติบัตร
+                            </button>
+                            <button onclick="addCertBuilderElement('gradeId')" class="px-2.5 py-2 rounded-lg bg-white border border-slate-300 hover:border-indigo-500 text-slate-800 text-[11px] font-bold shadow-sm transition-all text-left">
+                                + ชั้น & รหัส
+                            </button>
+                            <button onclick="addCertBuilderElement('activity')" class="px-2.5 py-2 rounded-lg bg-white border border-slate-300 hover:border-indigo-500 text-slate-800 text-[11px] font-bold shadow-sm transition-all text-left">
+                                + ชื่อกิจกรรม
+                            </button>
+                            <button onclick="addCertBuilderElement('date')" class="px-2.5 py-2 rounded-lg bg-white border border-slate-300 hover:border-indigo-500 text-slate-800 text-[11px] font-bold shadow-sm transition-all text-left">
+                                + วันที่ออกบัตร
+                            </button>
+                            <button onclick="addCertBuilderElement('custom')" class="px-2.5 py-2 rounded-lg bg-white border border-slate-300 hover:border-indigo-500 text-slate-800 text-[11px] font-bold shadow-sm transition-all text-left">
+                                + ข้อความเพิ่มเติม
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Element Inspector (Styling Controls) -->
+                    <div id="cert-element-inspector" class="space-y-2 pt-2 border-t border-slate-200 hidden">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-extrabold text-slate-800 flex items-center gap-1">
+                                <i class="fa-solid fa-sliders text-amber-600"></i> 3. ปรับแต่งองค์ประกอบที่เลือก
+                            </label>
+                            <button onclick="deleteSelectedCertElement()" class="text-rose-600 text-[11px] font-bold hover:underline">
+                                <i class="fa-solid fa-trash"></i> ลบองค์ประกอบนี้
+                            </button>
+                        </div>
+
+                        <div class="space-y-1.5 bg-white p-3 rounded-xl border border-slate-200">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 block">ข้อความ / พรีวิว</label>
+                                <input type="text" id="inspector-text" oninput="updateSelectedCertElement('text', this.value)" 
+                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs outline-none">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block">ฟอนต์ (Font)</label>
+                                    <select id="inspector-font" onchange="updateSelectedCertElement('font', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs bg-white">
+                                        <option value="font-sarabun">Sarabun (สารบรรณ)</option>
+                                        <option value="font-prompt">Prompt (พรมมิ์)</option>
+                                        <option value="font-kanit">Kanit (คณิต)</option>
+                                        <option value="font-charm">Charm (ตัวเขียน)</option>
+                                        <option value="font-chakra">Chakra Petch (ชักรา)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block">ขนาด (Size)</label>
+                                    <input type="number" id="inspector-size" min="10" max="100" oninput="updateSelectedCertElement('fontSize', this.value)" 
+                                           class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2 items-center pt-1">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block">สีอักษร</label>
+                                    <input type="color" id="inspector-color" onchange="updateSelectedCertElement('color', this.value)" class="w-full h-8 p-0 rounded cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block">ตัวหนา</label>
+                                    <select id="inspector-weight" onchange="updateSelectedCertElement('fontWeight', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs bg-white">
+                                        <option value="normal">ปกติ</option>
+                                        <option value="bold">ตัวหนา</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block">จัดวาง</label>
+                                    <select id="inspector-align" onchange="updateSelectedCertElement('align', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs bg-white">
+                                        <option value="center">ตรงกลาง</option>
+                                        <option value="left">ชิดซ้าย</option>
+                                        <option value="right">ชิดขวา</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Certificate Numbering & Range Controls -->
+                    <div class="space-y-2 pt-2 border-t border-slate-200">
+                        <label class="block text-xs font-extrabold text-slate-800 flex items-center gap-1">
+                            <i class="fa-solid fa-list-ol text-purple-600"></i> 4. กำหนดเลขเกียรติบัตร & ช่วงลำดับที่รัน
+                        </label>
+                        <div class="space-y-1.5 bg-white p-3 rounded-xl border border-slate-200">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 block">รูปแบบรหัสเกียรติบัตร ({NO} คือเลขรัน)</label>
+                                <input type="text" id="cert-num-prefix" value="มก.กิ.2569/{NO}" oninput="updateCertNumberPrefix(this.value)" 
+                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-mono font-bold">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block">ลำดับเริ่มต้น (#)</label>
+                                    <input type="number" id="cert-range-start" value="1" min="1" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block">ลำดับสิ้นสุด (#)</label>
+                                    <input type="number" id="cert-range-end" value="999" min="1" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Preview & Canvas Studio Area -->
+                <div class="lg:col-span-8 space-y-2 flex flex-col justify-center">
+                    <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+                        <span class="font-bold text-slate-700 flex items-center gap-1">
+                            <i class="fa-solid fa-hand-pointer text-indigo-500"></i> ลากวางข้อความบนภาพตัวอย่างเกียรติบัตร (A4 แนวนอน)
+                        </span>
+                        <span class="text-[11px] text-slate-400">คลิกที่ข้อความเพื่อเลือกและปรับแต่งขนาด/สี</span>
+                    </div>
+
+                    <!-- Canvas Container (Landscape A4 Aspect Ratio) -->
+                    <div id="cert-builder-canvas" class="cert-canvas-container rounded-2xl border border-slate-300">
+                        <!-- Draggable elements rendered here dynamically -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>

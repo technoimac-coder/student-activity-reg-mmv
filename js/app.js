@@ -1113,3 +1113,283 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminSearch = document.getElementById('admin-search-input');
     if (adminSearch) adminSearch.addEventListener('input', renderAdminTable);
 });
+
+// =========================================================================
+// 🎨 Visual Certificate Builder & Drag-and-Drop Engine
+// =========================================================================
+let certBuilderState = {
+    bgImage: null,
+    elements: [
+        { id: 'el-name', type: 'name', label: 'ชื่อ-นามสกุล', text: 'นางสาวทิพัมพร เพิ่มพูน', x: 50, y: 48, font: 'font-sarabun', fontSize: 32, color: '#0f172a', fontWeight: 'bold', align: 'center' },
+        { id: 'el-certNo', type: 'certNo', label: 'เลขที่เกียรติบัตร', text: 'เลขที่ มก.กิ.2569/001', x: 50, y: 36, font: 'font-sarabun', fontSize: 14, color: '#64748b', fontWeight: 'normal', align: 'center' },
+        { id: 'el-gradeId', type: 'gradeId', label: 'ชั้น & รหัส', text: 'นักเรียนชั้น ม.6/4  (รหัสนักเรียน 6893)', x: 50, y: 56, font: 'font-sarabun', fontSize: 15, color: '#334155', fontWeight: 'normal', align: 'center' },
+        { id: 'el-activity', type: 'activity', label: 'ชื่อกิจกรรม', text: 'ได้ผ่านการเข้าร่วมกิจกรรม "📸 เรื่องเล่าผ่านเลนส์กล้อง"', x: 50, y: 65, font: 'font-sarabun', fontSize: 18, color: '#1e1b4b', fontWeight: 'bold', align: 'center' },
+        { id: 'el-date', type: 'date', label: 'วันที่ออกบัตร', text: 'ให้ไว้ ณ วันที่ 19 กันยายน พ.ศ. 2569', x: 50, y: 74, font: 'font-sarabun', fontSize: 13, color: '#475569', fontWeight: 'normal', align: 'center' }
+    ],
+    selectedElementId: null,
+    numberPrefix: 'มก.กิ.2569/{NO}',
+    startIndex: 1,
+    endIndex: 999
+};
+
+function openCertBuilderModal() {
+    const saved = localStorage.getItem('cert_builder_template_v2');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            if (parsed && Array.isArray(parsed.elements)) {
+                certBuilderState = parsed;
+            }
+        } catch(e){}
+    }
+
+    const prefixInput = document.getElementById('cert-num-prefix');
+    if (prefixInput && certBuilderState.numberPrefix) {
+        prefixInput.value = certBuilderState.numberPrefix;
+    }
+
+    const modal = document.getElementById('cert-builder-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    renderCertBuilderCanvas();
+}
+
+function closeCertBuilderModal() {
+    const modal = document.getElementById('cert-builder-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function handleCertBgUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        certBuilderState.bgImage = e.target.result;
+        renderCertBuilderCanvas();
+        showToast('อัปโหลดแบบฟอร์มเกียรติบัตรเรียบร้อยแล้ว', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+function addCertBuilderElement(type) {
+    const id = 'el-custom-' + Date.now();
+    let label = 'ข้อความ';
+    let defaultText = 'ข้อความเพิ่มเติม';
+    let fontSize = 16;
+    let weight = 'normal';
+
+    if (type === 'name') { label = 'ชื่อ-นามสกุล'; defaultText = 'นางสาวทิพัมพร เพิ่มพูน'; fontSize = 32; weight = 'bold'; }
+    else if (type === 'certNo') { label = 'เลขที่เกียรติบัตร'; defaultText = 'เลขที่ มก.กิ.2569/001'; fontSize = 14; }
+    else if (type === 'gradeId') { label = 'ชั้น & รหัส'; defaultText = 'นักเรียนชั้น ม.6/4 (รหัสนักเรียน 6893)'; fontSize = 15; }
+    else if (type === 'activity') { label = 'ชื่อกิจกรรม'; defaultText = 'ได้ผ่านการเข้าร่วมกิจกรรม "📸 เรื่องเล่าผ่านเลนส์กล้อง"'; fontSize = 18; weight = 'bold'; }
+    else if (type === 'date') { label = 'วันที่ออกบัตร'; defaultText = 'ให้ไว้ ณ วันที่ 19 กันยายน พ.ศ. 2569'; fontSize = 13; }
+
+    const newEl = {
+        id: id,
+        type: type,
+        label: label,
+        text: defaultText,
+        x: 50,
+        y: 50,
+        font: 'font-sarabun',
+        fontSize: fontSize,
+        color: '#0f172a',
+        fontWeight: weight,
+        align: 'center'
+    };
+
+    certBuilderState.elements.push(newEl);
+    selectCertBuilderElement(id);
+    renderCertBuilderCanvas();
+}
+
+function selectCertBuilderElement(elId) {
+    certBuilderState.selectedElementId = elId;
+    const inspector = document.getElementById('cert-element-inspector');
+    const el = certBuilderState.elements.find(e => e.id === elId);
+
+    if (el && inspector) {
+        inspector.classList.remove('hidden');
+        document.getElementById('inspector-text').value = el.text || '';
+        document.getElementById('inspector-font').value = el.font || 'font-sarabun';
+        document.getElementById('inspector-size').value = el.fontSize || 16;
+        document.getElementById('inspector-color').value = el.color || '#000000';
+        document.getElementById('inspector-weight').value = el.fontWeight || 'normal';
+        document.getElementById('inspector-align').value = el.align || 'center';
+    } else if (inspector) {
+        inspector.classList.add('hidden');
+    }
+
+    renderCertBuilderCanvas();
+}
+
+function updateSelectedCertElement(prop, val) {
+    const el = certBuilderState.elements.find(e => e.id === certBuilderState.selectedElementId);
+    if (!el) return;
+
+    if (prop === 'fontSize') el.fontSize = parseInt(val) || 16;
+    else el[prop] = val;
+
+    renderCertBuilderCanvas();
+}
+
+function deleteSelectedCertElement() {
+    if (!certBuilderState.selectedElementId) return;
+    certBuilderState.elements = certBuilderState.elements.filter(e => e.id !== certBuilderState.selectedElementId);
+    certBuilderState.selectedElementId = null;
+    document.getElementById('cert-element-inspector')?.classList.add('hidden');
+    renderCertBuilderCanvas();
+    showToast('ลบองค์ประกอบเรียบร้อยแล้ว', 'info');
+}
+
+function updateCertNumberPrefix(val) {
+    certBuilderState.numberPrefix = val || 'มก.กิ.2569/{NO}';
+}
+
+function renderCertBuilderCanvas() {
+    const canvas = document.getElementById('cert-builder-canvas');
+    if (!canvas) return;
+
+    if (certBuilderState.bgImage) {
+        canvas.style.backgroundImage = `url('${certBuilderState.bgImage}')`;
+    } else {
+        canvas.style.backgroundImage = 'none';
+    }
+
+    canvas.innerHTML = certBuilderState.elements.map(el => {
+        const isSelected = el.id === certBuilderState.selectedElementId;
+        const alignStyle = el.align === 'center' ? 'text-center' : el.align === 'right' ? 'text-right' : 'text-left';
+
+        return `
+            <div id="${el.id}"
+                 class="draggable-element ${el.font} ${alignStyle} ${isSelected ? 'selected' : ''}"
+                 style="left: ${el.x}%; top: ${el.y}%; font-size: ${el.fontSize}px; color: ${el.color}; font-weight: ${el.fontWeight};"
+                 onmousedown="startCertDrag(event, '${el.id}')"
+                 ontouchstart="startCertDrag(event, '${el.id}')">
+                ${el.text}
+            </div>
+        `;
+    }).join('');
+}
+
+function startCertDrag(e, elId) {
+    e.stopPropagation();
+    selectCertBuilderElement(elId);
+
+    const canvas = document.getElementById('cert-builder-canvas');
+    if (!canvas) return;
+
+    const onMove = (moveEvent) => {
+        const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
+        const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
+
+        const rect = canvas.getBoundingClientRect();
+        let xPercent = Math.max(2, Math.min(98, ((clientX - rect.left) / rect.width) * 100));
+        let yPercent = Math.max(2, Math.min(98, ((clientY - rect.top) / rect.height) * 100));
+
+        const el = certBuilderState.elements.find(item => item.id === elId);
+        if (el) {
+            el.x = Math.round(xPercent);
+            el.y = Math.round(yPercent);
+            const domEl = document.getElementById(elId);
+            if (domEl) {
+                domEl.style.left = `${el.x}%`;
+                domEl.style.top = `${el.y}%`;
+            }
+        }
+    };
+
+    const onEnd = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+}
+
+function saveCertBuilderTemplate() {
+    const prefixInput = document.getElementById('cert-num-prefix');
+    if (prefixInput) certBuilderState.numberPrefix = prefixInput.value;
+
+    localStorage.setItem('cert_builder_template_v2', JSON.stringify(certBuilderState));
+    showToast('บันทึกแม่แบบเกียรติบัตรลากวางเรียบร้อยแล้ว!', 'success');
+}
+
+function generateCustomCertificatesBatch() {
+    saveCertBuilderTemplate();
+
+    const startIdx = parseInt(document.getElementById('cert-range-start')?.value) || 1;
+    const endIdx = parseInt(document.getElementById('cert-range-end')?.value) || 999;
+    const prefixTemplate = document.getElementById('cert-num-prefix')?.value || 'มก.กิ.2569/{NO}';
+
+    let list = applications.filter(a => a.status !== 'cancelled');
+    if (list.length === 0) {
+        showToast('ไม่พบข้อมูลรายชื่อนักเรียนสำหรับรันเกียรติบัตร', 'warning');
+        return;
+    }
+
+    list = list.slice(startIdx - 1, endIdx);
+
+    if (list.length === 0) {
+        showToast('ไม่พบรายชื่อในลำดับช่วงที่ระบุ', 'warning');
+        return;
+    }
+
+    const certModal = document.getElementById('cert-modal');
+    const container = document.getElementById('cert-printable-area');
+    if (!certModal || !container) return;
+
+    closeCertBuilderModal();
+
+    const todayThai = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const bgStyle = certBuilderState.bgImage ? `background-image: url('${certBuilderState.bgImage}'); background-size: 100% 100%;` : 'background-color: #faf8f5; border: 8px double rgba(217, 119, 6, 0.8);';
+
+    container.innerHTML = list.map((app, idx) => {
+        const certSeq = String(startIdx + idx).padStart(3, '0');
+        const certNoFormatted = prefixTemplate.replace('{NO}', certSeq);
+        const isLast = idx === list.length - 1;
+        const pageBreakClass = isLast ? '' : 'page-break-after';
+
+        const renderedElements = certBuilderState.elements.map(el => {
+            let textValue = el.text;
+            if (el.type === 'name') textValue = `${app.prefix}${app.fullName}`;
+            else if (el.type === 'certNo') textValue = certNoFormatted;
+            else if (el.type === 'gradeId') textValue = `นักเรียนชั้น ${app.grade} (รหัสนักเรียน ${app.studentId})`;
+            else if (el.type === 'activity') textValue = `ได้ผ่านการเข้าร่วมกิจกรรม "${app.activityTitle}"`;
+            else if (el.type === 'date') textValue = `ให้ไว้ ณ วันที่ ${todayThai}`;
+
+            const alignStyle = el.align === 'center' ? 'text-center' : el.align === 'right' ? 'text-right' : 'text-left';
+
+            return `
+                <div class="${el.font} ${alignStyle}"
+                     style="position: absolute; left: ${el.x}%; top: ${el.y}%; transform: translate(-50%, -50%); font-size: ${el.fontSize}px; color: ${el.color}; font-weight: ${el.fontWeight}; white-space: nowrap;">
+                    ${textValue}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="cert-canvas-container ${pageBreakClass} rounded-2xl relative shadow-xl overflow-hidden font-sarabun"
+                 style="${bgStyle} width: 100%; max-width: 1000px; margin: 0 auto 1.5rem auto;">
+                ${renderedElements}
+            </div>
+        `;
+    }).join('');
+
+    certModal.classList.remove('hidden');
+    certModal.classList.add('flex');
+
+    showToast(`ออกเกียรติบัตรสำเร็จ ${list.length} ใบ!`, 'success');
+}

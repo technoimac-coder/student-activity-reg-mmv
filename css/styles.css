@@ -1,5 +1,5 @@
 /* Full Standalone UI/UX Styles for Student Activity Registration App */
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Kanit:wght@300;400;600;700&family=Prompt:wght@300;400;500;600;700&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Chakra+Petch:wght@400;600;700&display=swap');
 
 :root {
     --font-primary: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -9,6 +9,13 @@
     --amber-gold: #f59e0b;
     --slate-bg: #f8fafc;
 }
+
+/* Thai Font Classes for Certificate Elements */
+.font-sarabun { font-family: 'Sarabun', sans-serif !important; }
+.font-prompt { font-family: 'Prompt', sans-serif !important; }
+.font-kanit { font-family: 'Kanit', sans-serif !important; }
+.font-charm { font-family: 'Charm', cursive !important; }
+.font-chakra { font-family: 'Chakra Petch', sans-serif !important; }
 
 * {
     box-sizing: border-box;
@@ -202,10 +209,11 @@ input:focus, select:focus, textarea:focus {
         visibility: hidden !important;
     }
     #cert-modal, #cert-modal *,
+    #cert-builder-modal, #cert-builder-modal *,
     #pass-modal, #pass-modal * {
         visibility: visible !important;
     }
-    #cert-modal, #pass-modal {
+    #cert-modal, #cert-builder-modal, #pass-modal {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
@@ -218,4 +226,46 @@ input:focus, select:focus, textarea:focus {
     .no-print {
         display: none !important;
     }
+}
+
+/* Interactive Certificate Canvas & Drag-and-Drop Elements */
+.cert-canvas-container {
+    aspect-ratio: 1.4142 / 1;
+    position: relative;
+    user-select: none;
+    overflow: hidden;
+    background-color: #ffffff;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.draggable-element {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    touch-action: none;
+    padding: 2px 6px;
+    border: 1.5px dashed transparent;
+    border-radius: 4px;
+    transition: border-color 0.15s ease;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+}
+
+.draggable-element:hover {
+    border-color: #6366f1;
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+.draggable-element.selected {
+    border: 2px solid #4f46e5 !important;
+    background-color: rgba(79, 70, 229, 0.12) !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+}
+
+@page {
+    size: A4 landscape;
+    margin: 0;
 }
