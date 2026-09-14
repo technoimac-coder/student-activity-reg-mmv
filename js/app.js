@@ -1120,11 +1120,9 @@ document.addEventListener('DOMContentLoaded', () => {
 let certBuilderState = {
     bgImage: null,
     elements: [
-        { id: 'el-name', type: 'name', label: 'ชื่อ-นามสกุล', text: 'นางสาวทิพัมพร เพิ่มพูน', x: 50, y: 48, font: 'font-sarabun', fontSize: 32, color: '#0f172a', fontWeight: 'bold', align: 'center' },
-        { id: 'el-certNo', type: 'certNo', label: 'เลขที่เกียรติบัตร', text: 'เลขที่ มก.กิ.2569/001', x: 50, y: 36, font: 'font-sarabun', fontSize: 14, color: '#64748b', fontWeight: 'normal', align: 'center' },
-        { id: 'el-gradeId', type: 'gradeId', label: 'ชั้น & รหัส', text: 'นักเรียนชั้น ม.6/4  (รหัสนักเรียน 6893)', x: 50, y: 56, font: 'font-sarabun', fontSize: 15, color: '#334155', fontWeight: 'normal', align: 'center' },
-        { id: 'el-activity', type: 'activity', label: 'ชื่อกิจกรรม', text: 'ได้ผ่านการเข้าร่วมกิจกรรม "📸 เรื่องเล่าผ่านเลนส์กล้อง"', x: 50, y: 65, font: 'font-sarabun', fontSize: 18, color: '#1e1b4b', fontWeight: 'bold', align: 'center' },
-        { id: 'el-date', type: 'date', label: 'วันที่ออกบัตร', text: 'ให้ไว้ ณ วันที่ 19 กันยายน พ.ศ. 2569', x: 50, y: 74, font: 'font-sarabun', fontSize: 13, color: '#475569', fontWeight: 'normal', align: 'center' }
+        { id: 'el-certNo', type: 'certNo', label: 'เลขที่เกียรติบัตร', text: 'เลขที่ มก.กิ.2569/001', x: 50, y: 35, font: 'font-sarabun', fontSize: 16, color: '#475569', fontWeight: 'normal', align: 'center' },
+        { id: 'el-name', type: 'name', label: 'ชื่อ-นามสกุล', text: 'นางสาวทิพัมพร เพิ่มพูน', x: 50, y: 50, font: 'font-sarabun', fontSize: 34, color: '#0f172a', fontWeight: 'bold', align: 'center' },
+        { id: 'el-sig-default', type: 'custom', label: 'ช่องวางลายเซ็น', text: '(ลงชื่อ..............................................)', x: 50, y: 78, font: 'font-sarabun', fontSize: 14, color: '#64748b', fontWeight: 'normal', align: 'center' }
     ],
     selectedElementId: null,
     numberPrefix: 'มก.กิ.2569/{NO}',
