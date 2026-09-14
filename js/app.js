@@ -1178,6 +1178,31 @@ function handleCertBgUpload(event) {
     reader.readAsDataURL(file);
 }
 
+function handleCertSigUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const id = 'el-img-' + Date.now();
+        const newEl = {
+            id: id,
+            type: 'image',
+            label: 'ลายเซ็น/ตราประทับ',
+            src: e.target.result,
+            x: 50,
+            y: 75,
+            width: 140
+        };
+
+        certBuilderState.elements.push(newEl);
+        selectCertBuilderElement(id);
+        renderCertBuilderCanvas();
+        showToast('อัปโหลดรูปภาพลายเซ็น / ตราประทับเรียบร้อยแล้ว!', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
 function addCertBuilderElement(type) {
     const id = 'el-custom-' + Date.now();
     let label = 'ข้อความ';
@@ -1213,16 +1238,33 @@ function addCertBuilderElement(type) {
 function selectCertBuilderElement(elId) {
     certBuilderState.selectedElementId = elId;
     const inspector = document.getElementById('cert-element-inspector');
+    const textCtrls = document.getElementById('inspector-text-controls');
+    const fontCtrls = document.getElementById('inspector-font-controls');
+    const imgCtrls = document.getElementById('inspector-image-controls');
     const el = certBuilderState.elements.find(e => e.id === elId);
 
     if (el && inspector) {
         inspector.classList.remove('hidden');
-        document.getElementById('inspector-text').value = el.text || '';
-        document.getElementById('inspector-font').value = el.font || 'font-sarabun';
-        document.getElementById('inspector-size').value = el.fontSize || 16;
-        document.getElementById('inspector-color').value = el.color || '#000000';
-        document.getElementById('inspector-weight').value = el.fontWeight || 'normal';
-        document.getElementById('inspector-align').value = el.align || 'center';
+
+        if (el.type === 'image') {
+            if (textCtrls) textCtrls.classList.add('hidden');
+            if (fontCtrls) fontCtrls.classList.add('hidden');
+            if (imgCtrls) {
+                imgCtrls.classList.remove('hidden');
+                document.getElementById('inspector-img-width').value = el.width || 140;
+            }
+        } else {
+            if (textCtrls) textCtrls.classList.remove('hidden');
+            if (fontCtrls) fontCtrls.classList.remove('hidden');
+            if (imgCtrls) imgCtrls.classList.add('hidden');
+
+            document.getElementById('inspector-text').value = el.text || '';
+            document.getElementById('inspector-font').value = el.font || 'font-sarabun';
+            document.getElementById('inspector-size').value = el.fontSize || 16;
+            document.getElementById('inspector-color').value = el.color || '#000000';
+            document.getElementById('inspector-weight').value = el.fontWeight || 'normal';
+            document.getElementById('inspector-align').value = el.align || 'center';
+        }
     } else if (inspector) {
         inspector.classList.add('hidden');
     }
@@ -1235,6 +1277,7 @@ function updateSelectedCertElement(prop, val) {
     if (!el) return;
 
     if (prop === 'fontSize') el.fontSize = parseInt(val) || 16;
+    else if (prop === 'width') el.width = parseInt(val) || 140;
     else el[prop] = val;
 
     renderCertBuilderCanvas();
@@ -1266,6 +1309,18 @@ function renderCertBuilderCanvas() {
     canvas.innerHTML = certBuilderState.elements.map(el => {
         const isSelected = el.id === certBuilderState.selectedElementId;
         const alignStyle = el.align === 'center' ? 'text-center' : el.align === 'right' ? 'text-right' : 'text-left';
+
+        if (el.type === 'image') {
+            return `
+                <div id="${el.id}"
+                     class="draggable-element ${isSelected ? 'selected' : ''}"
+                     style="left: ${el.x}%; top: ${el.y}%;"
+                     onmousedown="startCertDrag(event, '${el.id}')"
+                     ontouchstart="startCertDrag(event, '${el.id}')">
+                    <img src="${el.src}" alt="Signature" style="width: ${el.width || 140}px; height: auto; display: block;" pointer-events="none" />
+                </div>
+            `;
+        }
 
         return `
             <div id="${el.id}"
@@ -1363,6 +1418,14 @@ function generateCustomCertificatesBatch() {
         const pageBreakClass = isLast ? '' : 'page-break-after';
 
         const renderedElements = certBuilderState.elements.map(el => {
+            if (el.type === 'image') {
+                return `
+                    <div style="position: absolute; left: ${el.x}%; top: ${el.y}%; transform: translate(-50%, -50%);">
+                        <img src="${el.src}" alt="Signature" style="width: ${el.width || 140}px; height: auto; display: block;" />
+                    </div>
+                `;
+            }
+
             let textValue = el.text;
             if (el.type === 'name') textValue = `${app.prefix}${app.fullName}`;
             else if (el.type === 'certNo') textValue = certNoFormatted;
