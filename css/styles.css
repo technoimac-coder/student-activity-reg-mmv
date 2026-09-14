@@ -183,19 +183,39 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
+/* Certificate Styling */
+.cert-card-wrapper {
+    background-color: #faf8f5;
+    border: 8px double rgba(217, 119, 6, 0.8);
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.page-break-after {
+    page-break-after: always;
+    break-after: page;
+}
+
 /* Print Styles */
 @media print {
     body * {
-        visibility: hidden;
+        visibility: hidden !important;
     }
+    #cert-modal, #cert-modal *,
     #pass-modal, #pass-modal * {
-        visibility: visible;
+        visibility: visible !important;
     }
-    #pass-modal {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+    #cert-modal, #pass-modal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         background: white !important;
+        box-shadow: none !important;
+    }
+    .no-print {
+        display: none !important;
     }
 }

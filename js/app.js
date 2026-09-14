@@ -770,13 +770,125 @@ function renderAdminTable() {
                 <div><i class="fa-solid fa-phone text-slate-400 text-[10px]"></i> ${app.phone}</div>
                 <div class="text-slate-400">Line: ${app.lineId}</div>
             </td>
-            <td class="px-4 py-3 text-center">
+            <td class="px-4 py-3 text-center whitespace-nowrap space-x-1">
+                <button onclick="showCertificateModal('${app.registrationId}')" class="text-amber-800 bg-amber-100 hover:bg-amber-200 text-xs px-2.5 py-1.5 rounded-lg font-extrabold transition-all inline-flex items-center gap-1 shadow-sm" title="ออกเกียรติบัตรคนนี้">
+                    <i class="fa-solid fa-award"></i> เกียรติบัตร
+                </button>
                 <button onclick="deleteApplication('${app.registrationId}')" class="text-slate-400 hover:text-rose-600 text-sm p-1.5 rounded-lg hover:bg-rose-50 transition-colors" title="ลบข้อมูล">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </td>
         </tr>
     `).join('');
+}
+
+// Certificate Generator Modal Logic
+function showCertificateModal(targetId = 'all') {
+    const modal = document.getElementById('cert-modal');
+    const container = document.getElementById('cert-printable-area');
+    if (!modal || !container) return;
+
+    let targetApps = [];
+    if (targetId === 'all') {
+        const filterVal = document.getElementById('admin-activity-filter')?.value || 'all';
+        targetApps = applications.filter(a => a.status !== 'cancelled');
+        if (filterVal !== 'all') {
+            targetApps = targetApps.filter(a => a.activityId === filterVal);
+        }
+    } else {
+        const found = applications.find(a => a.registrationId === targetId);
+        if (found) targetApps = [found];
+    }
+
+    if (targetApps.length === 0) {
+        showToast('ไม่พบข้อมูลรายชื่อนักเรียนสำหรับออกเกียรติบัตร', 'warning');
+        return;
+    }
+
+    const todayThai = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    container.innerHTML = targetApps.map((app, idx) => {
+        const certNo = String(idx + 1).padStart(3, '0');
+        const isLast = idx === targetApps.length - 1;
+        const pageBreakClass = isLast ? '' : 'page-break-after';
+
+        return `
+            <div class="cert-card-wrapper ${pageBreakClass} p-6 sm:p-10 bg-[#faf8f5] border-8 border-double border-amber-600/80 rounded-2xl relative text-center text-slate-800 shadow-xl overflow-hidden font-sarabun">
+                <!-- Corner Ornaments -->
+                <div class="absolute top-3 left-3 text-amber-600/40 text-xl font-bold">❖</div>
+                <div class="absolute top-3 right-3 text-amber-600/40 text-xl font-bold">❖</div>
+                <div class="absolute bottom-3 left-3 text-amber-600/40 text-xl font-bold">❖</div>
+                <div class="absolute bottom-3 right-3 text-amber-600/40 text-xl font-bold">❖</div>
+
+                <!-- Header Logo & School Name -->
+                <div class="flex flex-col items-center justify-center space-y-1">
+                    <img src="img/logo.png" alt="Logo" class="w-16 h-16 object-contain mb-1" onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/167/167707.png';">
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-amber-900 tracking-wide uppercase">โรงเรียนมกุฎเมืองราชวิทยาลัย</h2>
+                    <p class="text-xs text-amber-800 font-semibold tracking-wider">สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาระยอง</p>
+                </div>
+
+                <!-- Title Banner -->
+                <div class="my-5">
+                    <div class="inline-block px-8 py-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-900 font-black text-2xl sm:text-3xl rounded-xl shadow-sm tracking-widest uppercase">
+                        เกียรติบัตร
+                    </div>
+                    <div class="text-xs text-slate-500 font-mono mt-2">เลขที่ มก.กิ./2569/${certNo}</div>
+                </div>
+
+                <!-- Body Certification Content -->
+                <div class="space-y-3.5 max-w-2xl mx-auto my-4">
+                    <p class="text-sm text-slate-600 font-medium">เกียรติบัตรฉบับนี้ให้ไว้เพื่อแสดงว่า</p>
+                    
+                    <h1 class="text-2xl sm:text-4xl font-extrabold text-indigo-950 underline decoration-amber-500 decoration-2 underline-offset-8">
+                        ${app.prefix}${app.fullName}
+                    </h1>
+                    
+                    <p class="text-xs sm:text-sm text-slate-600">
+                        นักเรียนชั้น <span class="font-bold text-slate-900">${app.grade}</span> &nbsp;•&nbsp; รหัสนักเรียน <span class="font-mono font-bold text-indigo-700">${app.studentId}</span>
+                    </p>
+
+                    <p class="text-xs sm:text-sm text-slate-700 leading-relaxed pt-1">
+                        ได้ผ่านการเข้าร่วมและสำเร็จการลงทะเบียนกิจกรรมนักเรียน <br>
+                        <span class="text-base sm:text-xl font-extrabold text-indigo-900 block mt-1.5">"${app.activityTitle}"</span>
+                    </p>
+                    
+                    <p class="text-xs text-slate-500 pt-1">
+                        ให้ไว้ ณ วันที่ ${todayThai}
+                    </p>
+                </div>
+
+                <!-- Footer Signatures -->
+                <div class="grid grid-cols-2 gap-8 items-end max-w-xl mx-auto mt-8 pt-4 border-t border-amber-200/80">
+                    <div class="text-center space-y-1">
+                        <div class="h-10 border-b border-dashed border-slate-300 w-36 mx-auto flex items-end justify-center pb-1">
+                            <span class="font-serif italic text-xs text-slate-400">(ลงชื่อครูผู้รับผิดชอบ)</span>
+                        </div>
+                        <div class="text-xs font-bold text-slate-800 pt-1">ครูผู้รับผิดชอบโครงการ</div>
+                        <div class="text-[10px] text-slate-500">โรงเรียนมกุฎเมืองราชวิทยาลัย</div>
+                    </div>
+
+                    <div class="text-center space-y-1">
+                        <div class="h-10 border-b border-dashed border-slate-300 w-36 mx-auto flex items-end justify-center pb-1">
+                            <span class="font-serif italic text-xs text-slate-400">(ลงชื่อผู้อำนวยการ)</span>
+                        </div>
+                        <div class="text-xs font-bold text-slate-800 pt-1">ผู้อำนวยการโรงเรียน</div>
+                        <div class="text-[10px] text-slate-500">โรงเรียนมกุฎเมืองราชวิทยาลัย</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeCertModal() {
+    const modal = document.getElementById('cert-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 
 function deleteApplication(regId) {
