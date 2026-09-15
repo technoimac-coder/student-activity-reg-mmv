@@ -22,14 +22,17 @@ function initData() {
                 activities = JSON.parse(JSON.stringify(INITIAL_ACTIVITIES));
                 localStorage.setItem(STORAGE_ACTIVITIES_KEY, JSON.stringify(activities));
             } else {
-                // Ensure default regStart and regEnd from INITIAL_ACTIVITIES exist if not saved
+                // Ensure registration stays OPEN by clearing expired regEnd
                 activities.forEach(act => {
+                    if (act.regEnd === "2026-09-15T16:00" || (act.regEnd && new Date(act.regEnd) <= new Date())) {
+                        act.regEnd = "";
+                    }
                     const match = INITIAL_ACTIVITIES.find(i => i.id === act.id);
                     if (match) {
                         if (act.regStart === undefined || act.regStart === null) act.regStart = match.regStart || '';
-                        if (act.regEnd === undefined || act.regEnd === null) act.regEnd = match.regEnd || '';
                     }
                 });
+                saveData();
             }
         } catch (e) {
             activities = JSON.parse(JSON.stringify(INITIAL_ACTIVITIES));

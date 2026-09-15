@@ -10,7 +10,7 @@ const INITIAL_ACTIVITIES = [
         location: "หอประชุมราชพฤกษ์ โรงเรียนมกุฎเมืองราชวิทยาลัย",
         capacity: 40,
         regStart: "2026-09-10T08:00",
-        regEnd: "2026-09-15T16:00",
+        regEnd: "",
         tags: ["Photography", "Video", "Smartphone", "Camera"],
         image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
         badgeColor: "bg-indigo-100 text-indigo-800 border-indigo-200"
