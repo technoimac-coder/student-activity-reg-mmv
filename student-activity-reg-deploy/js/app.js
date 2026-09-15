@@ -1120,9 +1120,9 @@ document.addEventListener('DOMContentLoaded', () => {
 let certBuilderState = {
     bgImage: null,
     elements: [
-        { id: 'el-certNo', type: 'certNo', label: 'เลขที่เกียรติบัตร', text: 'เลขที่ มก.กิ.2569/001', x: 50, y: 20, font: 'font-sarabun', fontSize: 16, color: '#475569', fontWeight: 'normal', align: 'center' },
-        { id: 'el-name', type: 'name', label: 'ชื่อ-นามสกุล', text: 'นางสาวทิพัมพร เพิ่มพูน', x: 50, y: 48, font: 'font-sarabun', fontSize: 34, color: '#0f172a', fontWeight: 'bold', align: 'center' },
-        { id: 'el-sig-default', type: 'custom', label: 'ช่องวางลายเซ็น', text: '(ลงชื่อ..............................................)', x: 50, y: 80, font: 'font-sarabun', fontSize: 14, color: '#64748b', fontWeight: 'normal', align: 'center' }
+        { id: 'el-certNo', type: 'certNo', label: 'เลขที่เกียรติบัตร', text: 'เลขที่ มก.กิ.2569/001', x: 50, y: 35, font: 'font-sarabun', fontSize: 16, color: '#475569', fontWeight: 'normal', align: 'center' },
+        { id: 'el-name', type: 'name', label: 'ชื่อ-นามสกุล', text: 'นางสาวทิพัมพร เพิ่มพูน', x: 50, y: 50, font: 'font-sarabun', fontSize: 34, color: '#0f172a', fontWeight: 'bold', align: 'center' },
+        { id: 'el-sig-default', type: 'custom', label: 'ช่องวางลายเซ็น', text: '(ลงชื่อ..............................................)', x: 50, y: 78, font: 'font-sarabun', fontSize: 14, color: '#64748b', fontWeight: 'normal', align: 'center' }
     ],
     selectedElementId: null,
     numberPrefix: 'มก.กิ.2569/{NO}',
@@ -1304,15 +1304,7 @@ function renderCertBuilderCanvas() {
         canvas.style.backgroundImage = 'none';
     }
 
-    const placeholderHtml = !certBuilderState.bgImage ? `
-        <div class="absolute inset-x-0 bottom-3 text-center pointer-events-none z-0">
-            <span class="text-[11px] text-amber-800/60 font-bold bg-amber-50/90 px-3 py-1 rounded-full border border-amber-200/60 shadow-sm">
-                📄 ภาพตัวอย่างขนาด A4 แนวนอน (อัปโหลดรูปเกียรติบัตรจริงของคุณครูได้ที่เมนู 1. ด้านซ้าย)
-            </span>
-        </div>
-    ` : '';
-
-    canvas.innerHTML = placeholderHtml + certBuilderState.elements.map(el => {
+    canvas.innerHTML = certBuilderState.elements.map(el => {
         const isSelected = el.id === certBuilderState.selectedElementId;
         const alignStyle = el.align === 'center' ? 'text-center' : el.align === 'right' ? 'text-right' : 'text-left';
 
