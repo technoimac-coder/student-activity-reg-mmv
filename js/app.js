@@ -1244,6 +1244,11 @@ function selectCertBuilderElement(elId) {
     if (el && inspector) {
         inspector.classList.remove('hidden');
 
+        const posXInput = document.getElementById('inspector-pos-x');
+        const posYInput = document.getElementById('inspector-pos-y');
+        if (posXInput) posXInput.value = el.x;
+        if (posYInput) posYInput.value = el.y;
+
         if (el.type === 'image') {
             if (textCtrls) textCtrls.classList.add('hidden');
             if (fontCtrls) fontCtrls.classList.add('hidden');
@@ -1276,6 +1281,8 @@ function updateSelectedCertElement(prop, val) {
 
     if (prop === 'fontSize') el.fontSize = parseInt(val) || 16;
     else if (prop === 'width') el.width = parseInt(val) || 140;
+    else if (prop === 'x') el.x = Math.max(0, Math.min(100, parseInt(val) || 0));
+    else if (prop === 'y') el.y = Math.max(0, Math.min(100, parseInt(val) || 0));
     else el[prop] = val;
 
     renderCertBuilderCanvas();
@@ -1288,6 +1295,19 @@ function deleteSelectedCertElement() {
     document.getElementById('cert-element-inspector')?.classList.add('hidden');
     renderCertBuilderCanvas();
     showToast('ลบองค์ประกอบเรียบร้อยแล้ว', 'info');
+}
+
+function resetCertBuilderToDefault() {
+    certBuilderState.bgImage = null;
+    certBuilderState.elements = [
+        { id: 'el-certNo', type: 'certNo', label: 'เลขที่เกียรติบัตร', text: 'เลขที่ มก.กิ.2569/001', x: 50, y: 20, font: 'font-sarabun', fontSize: 16, color: '#475569', fontWeight: 'normal', align: 'center' },
+        { id: 'el-name', type: 'name', label: 'ชื่อ-นามสกุล', text: 'นางสาวทิพัมพร เพิ่มพูน', x: 50, y: 48, font: 'font-sarabun', fontSize: 34, color: '#0f172a', fontWeight: 'bold', align: 'center' },
+        { id: 'el-sig-default', type: 'custom', label: 'ช่องวางลายเซ็น', text: '(ลงชื่อ..............................................)', x: 50, y: 80, font: 'font-sarabun', fontSize: 14, color: '#64748b', fontWeight: 'normal', align: 'center' }
+    ];
+    certBuilderState.selectedElementId = null;
+    document.getElementById('cert-element-inspector')?.classList.add('hidden');
+    renderCertBuilderCanvas();
+    showToast('รีเซ็ตกลับค่าเริ่มต้นเรียบร้อยแล้ว', 'info');
 }
 
 function updateCertNumberPrefix(val) {
@@ -1462,3 +1482,38 @@ function generateCustomCertificatesBatch() {
 
     showToast(`ออกเกียรติบัตรสำเร็จ ${list.length} ใบ!`, 'success');
 }
+
+// Global Keyboard Shortcuts for Cert Builder Studio (Arrow keys positioning & Delete key)
+document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('cert-builder-modal');
+    if (!modal || modal.classList.contains('hidden') || !certBuilderState.selectedElementId) return;
+
+    const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+
+    const el = certBuilderState.elements.find(item => item.id === certBuilderState.selectedElementId);
+    if (!el) return;
+
+    const step = e.shiftKey ? 5 : 1;
+
+    if (e.key === 'ArrowLeft') {
+        el.x = Math.max(0, el.x - step);
+        e.preventDefault();
+        selectCertBuilderElement(el.id);
+    } else if (e.key === 'ArrowRight') {
+        el.x = Math.min(100, el.x + step);
+        e.preventDefault();
+        selectCertBuilderElement(el.id);
+    } else if (e.key === 'ArrowUp') {
+        el.y = Math.max(0, el.y - step);
+        e.preventDefault();
+        selectCertBuilderElement(el.id);
+    } else if (e.key === 'ArrowDown') {
+        el.y = Math.min(100, el.y + step);
+        e.preventDefault();
+        selectCertBuilderElement(el.id);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        deleteSelectedCertElement();
+        e.preventDefault();
+    }
+});
