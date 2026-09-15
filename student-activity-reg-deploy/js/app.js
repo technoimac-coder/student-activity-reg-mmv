@@ -1096,7 +1096,7 @@ async function fetchFromGoogleSheet(isManual = false) {
         if (Array.isArray(data) && data.length > 0) {
             const defaultTitle = activities.length > 0 ? activities[0].title : '📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)';
 
-            applications = data.map((app, idx) => {
+            const fetchedApps = data.map((app, idx) => {
                 let actTitle = app.activityTitle || defaultTitle;
                 let grade = app.grade || '-';
                 let exp = app.cameraExperience || '-';
@@ -1138,13 +1138,27 @@ async function fetchFromGoogleSheet(isManual = false) {
                 };
             });
 
+            // Smart Data Merging: Update matching records, append new records, preserve all existing records
+            fetchedApps.forEach(item => {
+                const existingIdx = applications.findIndex(a => 
+                    (item.registrationId && a.registrationId === item.registrationId) || 
+                    (item.studentId && a.studentId === item.studentId) ||
+                    (item.fullName && a.fullName === item.fullName)
+                );
+                if (existingIdx !== -1) {
+                    applications[existingIdx] = { ...applications[existingIdx], ...item };
+                } else {
+                    applications.push(item);
+                }
+            });
+
             saveData();
             renderActivityDropdowns();
             renderActivityBanner();
             updateAdminStats();
             renderAdminTable();
 
-            if (isManual) showToast(`ซิงก์ข้อมูลสำเร็จ! ดึงข้อมูลผู้สมัคร ${applications.length} คนเรียบร้อย`, 'success');
+            if (isManual) showToast(`ซิงก์ข้อมูลสำเร็จ! รวมข้อมูลผู้สมัครเพิ่มเป็น ${applications.length} คนเรียบร้อย`, 'success');
         } else if (isManual) {
             showToast('เชื่อมต่อสำเร็จ แต่ยังไม่มีข้อมูลผู้สมัครใน Google Sheet (คงข้อมูลปัจจุบันไว้)', 'info');
         }

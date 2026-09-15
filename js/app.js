@@ -46,16 +46,12 @@ function initData() {
     if (savedApplications) {
         try {
             applications = JSON.parse(savedApplications);
-            if (!Array.isArray(applications) || applications.length === 0) {
-                applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
-                localStorage.setItem(STORAGE_APPS_KEY, JSON.stringify(applications));
-            }
+            if (!Array.isArray(applications)) applications = [];
         } catch (e) {
-            applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
+            applications = [];
         }
     } else {
-        applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
-        localStorage.setItem(STORAGE_APPS_KEY, JSON.stringify(applications));
+        applications = [];
     }
     
     if (activities.length > 0) {
@@ -1138,19 +1134,8 @@ async function fetchFromGoogleSheet(isManual = false) {
                 };
             });
 
-            // Smart Data Merging: Update matching records, append new records, preserve all existing records
-            fetchedApps.forEach(item => {
-                const existingIdx = applications.findIndex(a => 
-                    (item.registrationId && a.registrationId === item.registrationId) || 
-                    (item.studentId && a.studentId === item.studentId) ||
-                    (item.fullName && a.fullName === item.fullName)
-                );
-                if (existingIdx !== -1) {
-                    applications[existingIdx] = { ...applications[existingIdx], ...item };
-                } else {
-                    applications.push(item);
-                }
-            });
+            // Set applications to exact 100% data from Google Sheet
+            applications = fetchedApps;
 
             saveData();
             renderActivityDropdowns();
@@ -1158,7 +1143,7 @@ async function fetchFromGoogleSheet(isManual = false) {
             updateAdminStats();
             renderAdminTable();
 
-            if (isManual) showToast(`ซิงก์ข้อมูลสำเร็จ! รวมข้อมูลผู้สมัครเพิ่มเป็น ${applications.length} คนเรียบร้อย`, 'success');
+            if (isManual) showToast(`ซิงก์ตรงกับ Google Sheet 100%! พบรายชื่อผู้สมัครจริง ${applications.length} คน`, 'success');
         } else if (isManual) {
             showToast('เชื่อมต่อสำเร็จ แต่ยังไม่มีข้อมูลผู้สมัครใน Google Sheet (คงข้อมูลปัจจุบันไว้)', 'info');
         }
