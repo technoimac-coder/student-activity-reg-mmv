@@ -106,6 +106,26 @@ function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var data = JSON.parse(e.postData.contents);
+
+    // 🔴 จัดการการลบแถวข้อมูลเมื่อมีการกดลบจากหน้าเว็บ
+    if (data.action === 'delete') {
+      var rows = sheet.getDataRange().getValues();
+      var regIdToDelete = String(data.registrationId || '').trim();
+      var studentIdToDelete = String(data.studentId || '').trim();
+
+      for (var i = rows.length - 1; i >= 1; i--) {
+        var rowRegId = String(rows[i][1] || '').trim();
+        var rowStudentId = String(rows[i][2] || '').trim();
+
+        if ((regIdToDelete && rowRegId === regIdToDelete) || (studentIdToDelete && rowStudentId === studentIdToDelete)) {
+          sheet.deleteRow(i + 1); // ลบแถวใน Google Sheet
+          return ContentService.createTextOutput("Deleted Row " + (i + 1));
+        }
+      }
+      return ContentService.createTextOutput("Not Found");
+    }
+
+    // 🟢 บันทึกข้อมูลการสมัครใหม่
     sheet.appendRow([
       new Date().toLocaleString("th-TH", { timeZone: "Asia/Bangkok" }),
       data.registrationId || '',

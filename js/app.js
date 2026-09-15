@@ -892,14 +892,34 @@ function closeCertModal() {
 }
 
 function deleteApplication(regId) {
-    if (confirm('คุณต้องการลบข้อมูลผู้สมัครนี้ใช่หรือไม่?')) {
+    if (confirm('คุณต้องการลบข้อมูลผู้สมัครนี้ใช่หรือไม่?\n(ระบบจะส่งคำสั่งลบข้อมูลออกจาก Google Sheets ด้วย)')) {
+        const targetApp = applications.find(a => a.registrationId === regId);
+        const studentId = targetApp ? targetApp.studentId : '';
+
         applications = applications.filter(a => a.registrationId !== regId);
         saveData();
+
+        // Sync deletion to Google Sheets
+        if (GOOGLE_SHEET_URL && GOOGLE_SHEET_URL.trim() !== '') {
+            fetch(GOOGLE_SHEET_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete',
+                    registrationId: regId,
+                    studentId: studentId
+                })
+            }).then(() => {
+                console.log('Delete request sent to Google Sheets:', regId);
+            }).catch(err => console.error('Error sending delete request to Sheets:', err));
+        }
+
         renderActivityDropdowns();
         renderActivityBanner();
         updateAdminStats();
         renderAdminTable();
-        showToast('ลบข้อมูลผู้สมัครเรียบร้อยแล้ว', 'success');
+        showToast('ลบข้อมูลเรียบร้อยแล้ว (กำลังลบข้อมูลออกจาก Google Sheets)', 'success');
     }
 }
 
