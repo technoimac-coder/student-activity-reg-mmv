@@ -1093,42 +1093,18 @@ async function fetchFromGoogleSheet(isManual = false) {
             const defaultTitle = activities.length > 0 ? activities[0].title : '📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)';
 
             const fetchedApps = data.map((app, idx) => {
-                let actTitle = app.activityTitle || defaultTitle;
-                let grade = app.grade || '-';
-                let exp = app.cameraExperience || '-';
-                let equip = app.cameraEquipment || '-';
-                let phone = String(app.phone || '-');
-                let line = String(app.lineId || '-');
-
-                // Smart Auto-Alignment Fix for Column Shifts
-                if (actTitle.includes('ม.') || actTitle.includes('/') || (actTitle.length <= 6 && !actTitle.includes('เรื่องเล่า'))) {
-                    exp = grade;
-                    grade = actTitle;
-                    actTitle = defaultTitle;
-                }
-
-                if (grade.includes('ทักษะ') || grade.includes('ประสบการณ์') || grade.includes('พื้นฐาน') || grade.includes('แข่ง')) {
-                    exp = grade;
-                    grade = '-';
-                }
-
-                if (equip.match(/^[0-9]{8,12}$/)) {
-                    phone = equip;
-                    equip = 'อุปกรณ์ส่วนตัว (นำมาเอง)';
-                }
-
                 return {
                     registrationId: app.registrationId || (`REG-` + (100 + idx)),
                     studentId: String(app.studentId || ''),
                     prefix: app.prefix || '',
                     fullName: app.fullName || '',
-                    grade: grade,
-                    cameraExperience: exp,
-                    cameraEquipment: equip,
-                    phone: phone,
-                    lineId: line,
+                    grade: String(app.grade || '-'),
+                    cameraExperience: String(app.cameraExperience || '-'),
+                    cameraEquipment: String(app.cameraEquipment || '-'),
+                    phone: String(app.phone || '-'),
+                    lineId: String(app.lineId || '-'),
                     activityId: activities.length > 0 ? activities[0].id : 'act-photo-001',
-                    activityTitle: actTitle,
+                    activityTitle: app.activityTitle || (activities.length > 0 ? activities[0].title : '📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)'),
                     status: 'confirmed',
                     registeredAt: app.registeredAt || new Date().toISOString()
                 };
