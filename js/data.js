@@ -78,5 +78,35 @@ const INITIAL_APPLICATIONS = [
         activityTitle: "📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)",
         status: "confirmed",
         registeredAt: "2026-09-14T11:00:00"
+    },
+    {
+        registrationId: "REG-105",
+        studentId: "7105",
+        prefix: "นาย",
+        fullName: "พีรพล มะลิทอง",
+        grade: "ม.4/5",
+        cameraExperience: "สนใจงานแต่งรูปและตัดต่อ",
+        cameraEquipment: "กล้องมือถือ iPad Pro",
+        phone: "085-123-4567",
+        lineId: "peerapol_m",
+        activityId: "act-photo-001",
+        activityTitle: "📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)",
+        status: "confirmed",
+        registeredAt: "2026-09-14T15:45:00"
+    },
+    {
+        registrationId: "REG-106",
+        studentId: "6988",
+        prefix: "นางสาว",
+        fullName: "ศศิธร เจริญสุข",
+        grade: "ม.5/2",
+        cameraExperience: "มีประสบการณ์ถ่ายภาพพอร์ตเทรต",
+        cameraEquipment: "กล้อง Fujifilm X-T30 II",
+        phone: "084-567-8901",
+        lineId: "sasithorn_fuji",
+        activityId: "act-photo-001",
+        activityTitle: "📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)",
+        status: "confirmed",
+        registeredAt: "2026-09-15T08:30:00"
     }
 ];

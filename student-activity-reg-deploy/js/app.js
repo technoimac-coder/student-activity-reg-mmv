@@ -22,14 +22,17 @@ function initData() {
                 activities = JSON.parse(JSON.stringify(INITIAL_ACTIVITIES));
                 localStorage.setItem(STORAGE_ACTIVITIES_KEY, JSON.stringify(activities));
             } else {
-                // Ensure default regStart and regEnd from INITIAL_ACTIVITIES exist if not saved
+                // Ensure registration stays OPEN by clearing expired regEnd
                 activities.forEach(act => {
+                    if (act.regEnd === "2026-09-15T16:00" || (act.regEnd && new Date(act.regEnd) <= new Date())) {
+                        act.regEnd = "";
+                    }
                     const match = INITIAL_ACTIVITIES.find(i => i.id === act.id);
                     if (match) {
                         if (act.regStart === undefined || act.regStart === null) act.regStart = match.regStart || '';
-                        if (act.regEnd === undefined || act.regEnd === null) act.regEnd = match.regEnd || '';
                     }
                 });
+                saveData();
             }
         } catch (e) {
             activities = JSON.parse(JSON.stringify(INITIAL_ACTIVITIES));
@@ -43,11 +46,16 @@ function initData() {
     if (savedApplications) {
         try {
             applications = JSON.parse(savedApplications);
+            if (!Array.isArray(applications) || applications.length === 0) {
+                applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
+                localStorage.setItem(STORAGE_APPS_KEY, JSON.stringify(applications));
+            }
         } catch (e) {
-            applications = [];
+            applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
         }
     } else {
-        applications = [];
+        applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
+        localStorage.setItem(STORAGE_APPS_KEY, JSON.stringify(applications));
     }
     
     if (activities.length > 0) {
@@ -1039,83 +1047,121 @@ function switchTab(tabName) {
     }
 }
 
+function getActiveGoogleSheetUrl() {
+    return (localStorage.getItem('custom_google_sheet_url') || GOOGLE_SHEET_URL || '').trim();
+}
+
+function setCustomGoogleSheetUrl() {
+    const currentUrl = getActiveGoogleSheetUrl();
+    const newUrl = prompt('กรุณากรอก Web App URL ของ Google Apps Script (หรือปล่อยว่างเพื่อใช้ค่าเริ่มต้น):', currentUrl);
+    if (newUrl !== null) {
+        if (newUrl.trim() === '') {
+            localStorage.removeItem('custom_google_sheet_url');
+            showToast('รีเซ็ตลิงก์ Google Sheets เป็นค่าเริ่มต้นเรียบร้อย', 'info');
+        } else {
+            localStorage.setItem('custom_google_sheet_url', newUrl.trim());
+            showToast('บันทึก Web App URL ใหม่เรียบร้อยแล้ว!', 'success');
+        }
+        fetchFromGoogleSheet(true);
+    }
+}
+
 // Fetch Registrants from Google Sheets Web App
 async function fetchFromGoogleSheet(isManual = false) {
-    if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.trim() === '') return;
+    const targetUrl = getActiveGoogleSheetUrl();
+    if (!targetUrl) return;
 
     if (isManual) showToast('กำลังดึงข้อมูลรายชื่อจาก Google Sheets...', 'info');
 
     try {
-        const response = await fetch(GOOGLE_SHEET_URL);
-        if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-                const defaultTitle = activities.length > 0 ? activities[0].title : '📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)';
+        const response = await fetch(targetUrl, { redirect: 'follow' });
+        const textData = await response.text();
 
-                applications = data.map((app, idx) => {
-                    let actTitle = app.activityTitle || defaultTitle;
-                    let grade = app.grade || '-';
-                    let exp = app.cameraExperience || '-';
-                    let equip = app.cameraEquipment || '-';
-                    let phone = String(app.phone || '-');
-                    let line = String(app.lineId || '-');
+        // Check if response is HTML error from Google Apps Script (e.g. missing doGet function)
+        if (textData.includes('ไม่พบฟังก์ชันของสคริปต์: doGet') || textData.includes('Script function not found: doGet')) {
+            if (isManual) alert('⚠️ Google Apps Script แจ้งเตือน: ไม่พบฟังก์ชัน doGet\n\nโปรดคัดลอกโค้ด Google Apps Script ฉบับสมบูรณ์ (doGet + doPost) ไปวางใน Google Sheet แล้วกด Deploy (ปรับใช้ออกมาใช้) อีกครั้งครับ');
+            if (isManual) showToast('ไม่พบฟังก์ชัน doGet ใน Google Apps Script (โปรดวางโค้ดสมบูรณ์)', 'warning');
+            return;
+        }
 
-                    // Smart Auto-Alignment Fix for Column Shifts
-                    if (actTitle.includes('ม.') || actTitle.includes('/') || (actTitle.length <= 6 && !actTitle.includes('เรื่องเล่า'))) {
-                        // actTitle was actually grade!
-                        exp = grade;
-                        grade = actTitle;
-                        actTitle = defaultTitle;
-                    }
+        let data = [];
+        try {
+            data = JSON.parse(textData);
+        } catch(err) {
+            console.error("Failed to parse JSON from Google Sheets:", textData.substring(0, 100));
+            if (isManual) showToast('ไม่สามารถดึงข้อมูลได้ (โปรดตรวจสอบการคัดลอกโค้ด Google Apps Script)', 'warning');
+            return;
+        }
 
-                    if (grade.includes('ทักษะ') || grade.includes('ประสบการณ์') || grade.includes('พื้นฐาน') || grade.includes('แข่ง')) {
-                        // grade was actually cameraExperience!
-                        exp = grade;
-                        grade = '-';
-                    }
+        if (Array.isArray(data) && data.length > 0) {
+            const defaultTitle = activities.length > 0 ? activities[0].title : '📸 เรื่องเล่าผ่านเลนส์กล้อง (Storytelling Through The Lens)';
 
-                    // If phone number got placed in cameraEquipment
-                    if (equip.match(/^[0-9]{8,12}$/)) {
-                        phone = equip;
-                        equip = 'อุปกรณ์ส่วนตัว (นำมาเอง)';
-                    }
+            applications = data.map((app, idx) => {
+                let actTitle = app.activityTitle || defaultTitle;
+                let grade = app.grade || '-';
+                let exp = app.cameraExperience || '-';
+                let equip = app.cameraEquipment || '-';
+                let phone = String(app.phone || '-');
+                let line = String(app.lineId || '-');
 
-                    return {
-                        registrationId: app.registrationId || (`REG-` + (100 + idx)),
-                        studentId: String(app.studentId || ''),
-                        prefix: app.prefix || '',
-                        fullName: app.fullName || '',
-                        grade: grade,
-                        cameraExperience: exp,
-                        cameraEquipment: equip,
-                        phone: phone,
-                        lineId: line,
-                        activityId: activities.length > 0 ? activities[0].id : 'act-photo-001',
-                        activityTitle: actTitle,
-                        status: 'confirmed',
-                        registeredAt: app.registeredAt || new Date().toISOString()
-                    };
-                });
+                // Smart Auto-Alignment Fix for Column Shifts
+                if (actTitle.includes('ม.') || actTitle.includes('/') || (actTitle.length <= 6 && !actTitle.includes('เรื่องเล่า'))) {
+                    exp = grade;
+                    grade = actTitle;
+                    actTitle = defaultTitle;
+                }
 
-                saveData();
-                renderActivityDropdowns();
-                renderActivityBanner();
-                updateAdminStats();
-                renderAdminTable();
+                if (grade.includes('ทักษะ') || grade.includes('ประสบการณ์') || grade.includes('พื้นฐาน') || grade.includes('แข่ง')) {
+                    exp = grade;
+                    grade = '-';
+                }
 
-                if (isManual) showToast(`ซิงก์ข้อมูลสำเร็จ! จัดระเบียบผู้สมัคร ${applications.length} คนเรียบร้อย`, 'success');
-            } else if (isManual) {
-                showToast('เชื่อมต่อสำเร็จ แต่ยังไม่มีข้อมูลผู้สมัครใน Google Sheet', 'info');
-            }
+                if (equip.match(/^[0-9]{8,12}$/)) {
+                    phone = equip;
+                    equip = 'อุปกรณ์ส่วนตัว (นำมาเอง)';
+                }
+
+                return {
+                    registrationId: app.registrationId || (`REG-` + (100 + idx)),
+                    studentId: String(app.studentId || ''),
+                    prefix: app.prefix || '',
+                    fullName: app.fullName || '',
+                    grade: grade,
+                    cameraExperience: exp,
+                    cameraEquipment: equip,
+                    phone: phone,
+                    lineId: line,
+                    activityId: activities.length > 0 ? activities[0].id : 'act-photo-001',
+                    activityTitle: actTitle,
+                    status: 'confirmed',
+                    registeredAt: app.registeredAt || new Date().toISOString()
+                };
+            });
+
+            saveData();
+            renderActivityDropdowns();
+            renderActivityBanner();
+            updateAdminStats();
+            renderAdminTable();
+
+            if (isManual) showToast(`ซิงก์ข้อมูลสำเร็จ! ดึงข้อมูลผู้สมัคร ${applications.length} คนเรียบร้อย`, 'success');
         } else if (isManual) {
-            showToast('กรุณาอัปเดตโค้ด doGet ใน Google Apps Script เพื่อเปิดใช้งานการซิงก์', 'warning');
+            showToast('เชื่อมต่อสำเร็จ แต่ยังไม่มีข้อมูลผู้สมัครใน Google Sheet (คงข้อมูลปัจจุบันไว้)', 'info');
         }
-    } catch (err) {
-        console.log("Could not fetch from Google Sheet:", err);
-        if (isManual) {
-            showToast('ไม่สามารถดึงข้อมูลได้ (โปรดตรวจดูว่าอัปเดตโค้ด Google Apps Script แล้วหรือยัง)', 'warning');
-        }
+    } catch (e) {
+        console.error("Error fetching Google Sheets:", e);
+        if (isManual) showToast('ไม่สามารถเชื่อมต่อ Google Sheets ได้ (โปรดตรวจดูว่าตั้งค่าสิทธิ์เข้าถึงเป็น ทุกคน / Anyone แล้วหรือยัง)', 'error');
     }
+}
+
+function restoreSampleApplications() {
+    applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
+    saveData();
+    renderActivityDropdowns();
+    renderActivityBanner();
+    updateAdminStats();
+    renderAdminTable();
+    showToast('คืนค่าข้อมูลรายชื่อนักเรียนตัวอย่างเรียบร้อยแล้ว!', 'success');
 }
 
 // Init Event Listeners
