@@ -43,16 +43,11 @@ function initData() {
     if (savedApplications) {
         try {
             applications = JSON.parse(savedApplications);
-            if (!Array.isArray(applications) || applications.length === 0) {
-                applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
-                localStorage.setItem(STORAGE_APPS_KEY, JSON.stringify(applications));
-            }
         } catch (e) {
-            applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
+            applications = [];
         }
     } else {
-        applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
-        localStorage.setItem(STORAGE_APPS_KEY, JSON.stringify(applications));
+        applications = [];
     }
     
     if (activities.length > 0) {
@@ -1108,27 +1103,19 @@ async function fetchFromGoogleSheet(isManual = false) {
                 updateAdminStats();
                 renderAdminTable();
 
-                if (isManual) showToast(`ซิงก์ข้อมูลสำเร็จ! ดึงข้อมูลผู้สมัคร ${applications.length} คนเรียบร้อย`, 'success');
+                if (isManual) showToast(`ซิงก์ข้อมูลสำเร็จ! จัดระเบียบผู้สมัคร ${applications.length} คนเรียบร้อย`, 'success');
             } else if (isManual) {
-                showToast('เชื่อมต่อสำเร็จ แต่ยังไม่มีข้อมูลผู้สมัครใน Google Sheet (คงข้อมูลปัจจุบันไว้)', 'info');
+                showToast('เชื่อมต่อสำเร็จ แต่ยังไม่มีข้อมูลผู้สมัครใน Google Sheet', 'info');
             }
         } else if (isManual) {
-            showToast('ไม่สามารถเชื่อมต่อ Google Sheets ได้ในขณะนี้ (ใช้งานข้อมูลในระบบ)', 'warning');
+            showToast('กรุณาอัปเดตโค้ด doGet ใน Google Apps Script เพื่อเปิดใช้งานการซิงก์', 'warning');
         }
-    } catch (e) {
-        console.error("Error fetching Google Sheets:", e);
-        if (isManual) showToast('เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Sheets', 'error');
+    } catch (err) {
+        console.log("Could not fetch from Google Sheet:", err);
+        if (isManual) {
+            showToast('ไม่สามารถดึงข้อมูลได้ (โปรดตรวจดูว่าอัปเดตโค้ด Google Apps Script แล้วหรือยัง)', 'warning');
+        }
     }
-}
-
-function restoreSampleApplications() {
-    applications = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
-    saveData();
-    renderActivityDropdowns();
-    renderActivityBanner();
-    updateAdminStats();
-    renderAdminTable();
-    showToast('คืนค่าข้อมูลรายชื่อนักเรียนตัวอย่างเรียบร้อยแล้ว!', 'success');
 }
 
 // Init Event Listeners
